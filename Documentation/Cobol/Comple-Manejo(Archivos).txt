@@ -1,0 +1,174 @@
+---------------------------------------------------------------
+--- MANEJO DE ARCHIVOS EN COBOL ---
+--- GUÍA COMPLETA ---
+---------------------------------------------------------------
+
+**********************
+* ESTRUCTURA PARA MANEJO DE ARCHIVOS EN COBOL *
+**********************
+* Esta guía explica cómo trabajar con archivos en COBOL,      *
+* incluyendo lectura, escritura, actualización y eliminación *
+* de registros. Además, se abordan temas avanzados como el   *
+* uso de archivos indexados, llaves primarias y acceso       *
+* dinámico a registros.                                      *
+**********************
+
+IDENTIFICATION DIVISION.
+--------------------------------------------------------------
+* Sección de identificación del programa.                    *
+--------------------------------------------------------------
+PROGRAM-ID. MANEJO-ARCHIVOS.
+AUTHOR. "Tu Nombre".
+DATE-WRITTEN. "2025-01-23".
+
+ENVIRONMENT DIVISION.
+--------------------------------------------------------------
+* Sección que define el entorno del programa, incluyendo     *
+* la configuración de archivos.                              *
+--------------------------------------------------------------
+INPUT-OUTPUT SECTION.
+FILE-CONTROL.
+    SELECT ARCHIVO-CLIENTES ASSIGN TO "clientes.dat"
+        ORGANIZATION IS SEQUENTIAL
+        ACCESS MODE IS SEQUENTIAL
+        FILE STATUS IS FS-ARCHIVO.
+
+    SELECT ARCHIVO-INDEXADO ASSIGN TO "clientes.idx"
+        ORGANIZATION IS INDEXED
+        ACCESS MODE IS RANDOM
+        RECORD KEY IS CLIENTE-ID
+        ALTERNATE RECORD KEY IS CLIENTE-NOMBRE
+        FILE STATUS IS FS-ARCHIVO-INDEX.
+
+DATA DIVISION.
+--------------------------------------------------------------
+* Sección de datos, donde se definen las variables y la      *
+* estructura de los archivos.                                *
+--------------------------------------------------------------
+
+FILE SECTION.
+--------------------------------------------------------------
+* Definición de la estructura del archivo de clientes.       *
+--------------------------------------------------------------
+FD ARCHIVO-CLIENTES.
+01 REGISTRO-CLIENTE.
+   05 CLIENTE-ID        PIC 9(5).     *> ID único del cliente
+   05 CLIENTE-NOMBRE    PIC A(30).    *> Nombre del cliente
+   05 CLIENTE-EDAD      PIC 99.       *> Edad del cliente
+   05 CLIENTE-CORREO    PIC A(50).    *> Correo electrónico
+
+FD ARCHIVO-INDEXADO.
+01 REGISTRO-INDEXADO.
+   05 CLIENTE-ID        PIC 9(5).     *> ID único del cliente
+   05 CLIENTE-NOMBRE    PIC A(30).    *> Llave alterna
+   05 CLIENTE-EDAD      PIC 99.
+   05 CLIENTE-CORREO    PIC A(50).
+
+WORKING-STORAGE SECTION.
+--------------------------------------------------------------
+* Variables temporales para el manejo del archivo.           *
+--------------------------------------------------------------
+01 FS-ARCHIVO           PIC XX.       *> Estado del archivo
+01 FS-ARCHIVO-INDEX     PIC XX.
+01 EOF-FLAG             PIC X VALUE 'N'. *> Bandera de fin de archivo
+   88 EOF              VALUE 'Y'.     *> Condición de fin de archivo
+
+PROCEDURE DIVISION.
+--------------------------------------------------------------
+* Sección de procedimientos, donde se ejecuta la lógica del  *
+* programa.                                                  *
+--------------------------------------------------------------
+
+* Abrir archivo para escritura (creación).                   *
+OPEN OUTPUT ARCHIVO-CLIENTES.
+IF FS-ARCHIVO NOT = "00"
+    DISPLAY "Error al abrir el archivo para escritura."
+    STOP RUN.
+
+* Escribir registros en el archivo.                          *
+MOVE 1 TO CLIENTE-ID.
+MOVE "Juan Pérez" TO CLIENTE-NOMBRE.
+MOVE 25 TO CLIENTE-EDAD.
+MOVE "juan@example.com" TO CLIENTE-CORREO.
+WRITE REGISTRO-CLIENTE.
+
+MOVE 2 TO CLIENTE-ID.
+MOVE "Ana Gómez" TO CLIENTE-NOMBRE.
+MOVE 30 TO CLIENTE-EDAD.
+MOVE "ana@example.com" TO CLIENTE-CORREO.
+WRITE REGISTRO-CLIENTE.
+
+CLOSE ARCHIVO-CLIENTES.
+
+* Abrir archivo para lectura.                                *
+OPEN INPUT ARCHIVO-CLIENTES.
+IF FS-ARCHIVO NOT = "00"
+    DISPLAY "Error al abrir el archivo para lectura."
+    STOP RUN.
+
+* Leer registros del archivo.                                *
+PERFORM UNTIL EOF
+    READ ARCHIVO-CLIENTES
+        AT END
+            SET EOF TO TRUE
+        NOT AT END
+            DISPLAY "ID: " CLIENTE-ID
+            DISPLAY "Nombre: " CLIENTE-NOMBRE
+            DISPLAY "Edad: " CLIENTE-EDAD
+            DISPLAY "Correo: " CLIENTE-CORREO
+            DISPLAY "-------------------------"
+    END-READ
+END-PERFORM.
+
+CLOSE ARCHIVO-CLIENTES.
+
+* Abrir archivo indexado para acceso aleatorio.              *
+OPEN I-O ARCHIVO-INDEXADO.
+IF FS-ARCHIVO-INDEX NOT = "00"
+    DISPLAY "Error al abrir el archivo indexado."
+    STOP RUN.
+
+* Buscar registro con clave primaria.                        *
+MOVE 1 TO CLIENTE-ID.
+READ ARCHIVO-INDEXADO KEY IS CLIENTE-ID
+    INVALID KEY
+        DISPLAY "Cliente no encontrado."
+    NOT INVALID KEY
+        DISPLAY "Cliente encontrado: " CLIENTE-NOMBRE.
+
+CLOSE ARCHIVO-INDEXADO.
+
+* Fin del programa.                                          *
+STOP RUN.
+
+**********************
+* EXPLICACIÓN DE MANEJO DE ARCHIVOS EN COBOL *
+**********************
+
+1. **ENVIRONMENT DIVISION**:
+   - Define la configuración de los archivos.
+   - `SELECT` asocia archivos con nombres físicos.
+   - `ORGANIZATION IS SEQUENTIAL` para archivos secuenciales.
+   - `ORGANIZATION IS INDEXED` para archivos indexados.
+   - `FILE STATUS` almacena el estado de cada archivo.
+
+2. **FILE SECTION**:
+   - Define la estructura de los registros en archivos.
+   - Uso de llaves primarias y alternativas para indexación.
+
+3. **WORKING-STORAGE SECTION**:
+   - Contiene variables temporales.
+   - Manejo de banderas de estado y EOF.
+
+4. **PROCEDURE DIVISION**:
+   - **Apertura y cierre de archivos**.
+   - **Escritura y lectura secuencial**.
+   - **Búsqueda con clave primaria en archivos indexados**.
+
+**********************
+* REFERENCIAS:
+**********************
+- *Documentación oficial de COBOL*: https://www.ibm.com/docs/en/cobol
+- *Libro de COBOL*: "Structured COBOL Programming" por Nancy B. Stern, Robert A. Stern.
+- *Tutoriales de COBOL en línea*: https://www.guru99.com/cobol-tutorial.html
+
